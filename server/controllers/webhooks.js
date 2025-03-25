@@ -27,6 +27,9 @@ export const stripeWebhooks = async (req, res) => {
                 })
                 const { transactionId } = session.data[0].metadata;
                 const transactionData = await transactionModel.findById(transactionId);
+                if (transactionData.payment) {
+                    return res.json({ success: false, message: 'Payment Failed' });
+                }
                 transactionData.payment = true;
                 await transactionData.save();
 
