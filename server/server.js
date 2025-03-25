@@ -4,6 +4,7 @@ import cors from 'cors';
 import connectDB from './configs/mongodb.js';
 import userRouter from './routes/userRoutes.js';
 import imageRouter from './routes/imageRoutes.js';
+import { stripeWebhooks } from './controllers/webhooks.js';
 
 // App Config
 const app = express();
@@ -19,6 +20,6 @@ app.use(cors());
 app.get('/', (req, res) => res.send('API Working'));
 app.use('/api/user', userRouter);
 app.use('/api/image', imageRouter);
-app.post('/stripe', express.raw({ type: 'application/json' }),);
+app.post('/stripe', express.raw({ type: 'application/json' }), stripeWebhooks);
 
 app.listen(PORT, () => console.log('Server Running on port', PORT));
