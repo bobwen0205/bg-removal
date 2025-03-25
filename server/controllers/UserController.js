@@ -1,9 +1,11 @@
 import { Webhook } from "svix"
 import userModel from "../models/userModel.js";
+import transactionModel from "../models/transactionModel.js";
+import Stripe from "stripe";
 
 // API Controller Function to Manage Clerk User with Database
 // http://localhost:4000/api/user/webhooks
-const clerkWebhooks = async (req, res) => {
+export const clerkWebhooks = async (req, res) => {
     try {
         // Create a Svix instance with clerk webhook secret.
         const whook = new Webhook(process.env.CLERK_WEBHOOK_SECRET);
@@ -57,7 +59,7 @@ const clerkWebhooks = async (req, res) => {
 
 
 // API Controller function to get user available credits data
-const userCredits = async (req, res) => {
+export const userCredits = async (req, res) => {
     try {
         const { clerkId } = req.body;
 
@@ -70,6 +72,72 @@ const userCredits = async (req, res) => {
     }
 }
 
+// API to make payment for credits
+export const paymentStripe = async (req, res) => {
+    try {
+        const { clerkId, planId } = req.body;
+        const { origin } = req.headers;
+        const userData = await userModel.findOne({ clerkId });
+        if (!userData || !planId) {
+            return res.json({ success: false, message: 'Invalid Credentials' });
+        }
+        let credits, plan, amount, date;
+        switch (planId) {
+            case 'Basic':
+                plan = 'Basic';
+                credits = 100;
+                amount = 10;
+                break;
+            case 'Advanced':
+                plan = 'Advanced';
+                credits = 500;
+                amount = 50;
+                break;
+            case 'Business':
+                plan = 'Business';
+                credits = 1000;
+                amount = 250;
+                break;
+            default:
+                break;
+        }
+        date = Date.now();
+        // Creating Transaction
+        const transactionData = {
+            clerkId,
+            plan,
+            amount,
+            credits,
+            date,
+        };
 
+        const newTransaction = await transactionModel.create(transactionData);
+        // Stripe Gateway Initialize
+        const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+        const currency = process.env.CURRENCY.toLowerCase();
+        // Creating line items for Stripe
+        const line_items = [{
+            price_data: {
+                currency,
+                product_data: {
+                    name: transactionData.plan,
+                },
+                unit_amount: Math.floor(newTransaction.amount) * 100
+            },
+            quantity: 1
+        }]
+        const session = await stripeInstance.checkout.sessions.create({
+            success_url: `${origin}/`,
+            cancel_url: `${origin}/`,
+            line_items: line_items,
+            mode: 'payment',
+            metadata: {
+                transactionId: newTransaction._id.toString(),
+            }
+        })
+        res.json({ success: true, session_url: session.url });
 
-export { clerkWebhooks, userCredits };
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+}
