@@ -95,7 +95,7 @@ export const paymentStripe = async (req, res) => {
                 break;
             case 'Business':
                 plan = 'Business';
-                credits = 1000;
+                credits = 5000;
                 amount = 250;
                 break;
             default:
