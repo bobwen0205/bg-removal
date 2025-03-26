@@ -6,7 +6,7 @@ const Header = () => {
   const { removeBg } = useContext(AppContext);
 
   return (
-    <div className="flex items-center justify-between max-sm:flex-col-reverse gap-y-10 px-4 mt-10 lg:px-44 sm:mt-20">
+    <div className="flex items-center justify-center max-sm:flex-col-reverse gap-20 gap-y-10 px-4 mt-10 lg:px-44 sm:mt-20">
       {/* Left Side */}
       <div>
         <h1 className="text-4xl xl:text-5xl 2xl:text-6xl font-bold text-neutral-700 leading-tight">
